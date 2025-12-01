@@ -4,7 +4,10 @@
 enum class AtomType {
     Hydrogen,
     Helium,
-    Oxygen
+    Oxygen,
+    Carbon,    
+    Nitrogen,  
+    Ferrum,  
 };
 
 class Particle {
@@ -14,6 +17,9 @@ public:
     float radius;
     sf::Color color;
     AtomType type;
+
+    bool linked = false;
+    std::vector<Particle*> partners;
 
     Particle(AtomType t, sf::Vector2f startPos);
 
