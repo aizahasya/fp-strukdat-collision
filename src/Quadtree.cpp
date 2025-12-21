@@ -48,10 +48,10 @@ void Quadtree::insert(Particle* p) {
     southwest->insert(p);
 }
 
-void Quadtree::query(sf::FloatRect range, std::vector<Particle*>& found) {
+void Quadtree::query(sf::FloatRect range, std::vector<Particle*>& found) {      //cari semua particle di range
     if (!boundary.intersects(range)) return;
 
-    for (auto* p : points) {
+    for (auto* p : points) {        //periksa particle yg masuk area
         if (range.contains(p->pos))
             found.push_back(p);
     }

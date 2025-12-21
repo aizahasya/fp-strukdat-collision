@@ -1,56 +1,94 @@
 #include <SFML/Graphics.hpp>
 #include "ParticleSystem.hpp"
+#include <cstdlib>      //library standar nanti di pakai buat std::rand()std::srand()
+#include <ctime>        
+
+static AtomType randomAtom() {      //fungsi buat random atom
+    return static_cast<AtomType>(std::rand() % 6); // 6 jenis atom
+}
+
+static sf::Vector2f randomPos() {       //fungsi random posisi
+    return {
+        float(std::rand() % 800),
+        float(std::rand() % 600)
+    };
+}
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Particle Simulation");
+    std::srand(static_cast<unsigned>(std::time(nullptr)));      //buat atur seed random nya berdasarkan waktu
 
-    ParticleSystem ps;
+    sf::RenderWindow window(        //buat window nya
+        sf::VideoMode(800, 600),
+        "Particle Collision - Random Init + Keyboard Spawn"
+    );
 
-    // Jumlah awal tiap jenis partikel (manual)
-    int numHydrogen = 200;
-    int numHelium = 5;
-    int numOxygen = 40;
-    int numCarbon = 300;
-    int numNitrogen = 4;
-    int numFerrum = 2;
+    ParticleSystem ps;      //objek nyimpen particle update collison dan nggambar 
 
-    // Tambahkan partikel sesuai jumlah
-    for(int i = 0; i < numHydrogen; i++)
-        ps.addParticle(AtomType::Hydrogen, sf::Vector2f(rand()%800, rand()%600));
+    int initialTotal = 50;      //total particle awal
 
-    for(int i = 0; i < numHelium; i++)
-        ps.addParticle(AtomType::Helium, sf::Vector2f(rand()%800, rand()%600));
+    for (int i = 0; i < initialTotal; i++) {        //loop sesuai input random jenis plus posisi
+        ps.addParticle(
+            randomAtom(),
+            randomPos()
+        );
+    }
 
-    for(int i = 0; i < numOxygen; i++)
-        ps.addParticle(AtomType::Oxygen, sf::Vector2f(rand()%800, rand()%600));
+    sf::Clock clock;        //buat ngitung dt waktu antar frame
 
-    for(int i = 0; i < numCarbon; i++)
-        ps.addParticle(AtomType::Carbon, sf::Vector2f(rand()%800, rand()%600));
-
-    for(int i = 0; i < numNitrogen; i++)
-        ps.addParticle(AtomType::Nitrogen, sf::Vector2f(rand()%800, rand()%600));
-
-    int numIron = 2;  // jumlah manual
-
-    for(int i = 0; i < numFerrum; i++)
-        ps.addParticle(AtomType::Ferrum, sf::Vector2f(rand()%800, rand()%600));
-
-    sf::Clock clock;
-
-    while (window.isOpen()) {
-        sf::Event e;
+    while (window.isOpen()) {       //loop jalan selama window blm di tutup
+        sf::Event e;        //buat ambil semua event
         while (window.pollEvent(e)) {
             if (e.type == sf::Event::Closed)
                 window.close();
+
+            //ganti algoritma
+            if (e.type == sf::Event::KeyPressed) {
+                if (e.key.code == sf::Keyboard::Num1)
+                    ps.setCollisionMode(CollisionMode::BruteForce);
+
+                if (e.key.code == sf::Keyboard::Num2)
+                    ps.setCollisionMode(CollisionMode::Quadtree);
+            }
+
+           //nambah particle di tengah jalan
+            if (e.type == sf::Event::KeyPressed) {      
+                if (e.key.code == sf::Keyboard::Space) {
+                    // Tambah 10 partikel random kalau tekan spasi :)
+                    for (int i = 0; i < 10; i++) {
+                        ps.addParticle(
+                            randomAtom(),
+                            randomPos()
+                        );
+                    }
+                }
+
+                // Tambah 1 partikel sesuai tombol nama depan atom nya
+                if (e.key.code == sf::Keyboard::H)
+                    ps.addParticle(AtomType::Hydrogen, randomPos());
+
+                if (e.key.code == sf::Keyboard::E) // Helium
+                    ps.addParticle(AtomType::Helium, randomPos());
+
+                if (e.key.code == sf::Keyboard::O)
+                    ps.addParticle(AtomType::Oxygen, randomPos());
+
+                if (e.key.code == sf::Keyboard::C)
+                    ps.addParticle(AtomType::Carbon, randomPos());
+
+                if (e.key.code == sf::Keyboard::N)
+                    ps.addParticle(AtomType::Nitrogen, randomPos());
+
+                if (e.key.code == sf::Keyboard::F)
+                    ps.addParticle(AtomType::Ferrum, randomPos());
+            }
         }
 
-        float dt = clock.restart().asSeconds();
+        float dt = clock.restart().asSeconds();     //buat ngitung waktu nya dari frame terakhir aja
+        ps.update(dt);      
 
-        ps.update(dt);
-
-        window.clear(sf::Color::Black);
-        ps.draw(window);
-        window.display();
+        window.clear(sf::Color::Black);     //layar bersih
+        ps.draw(window);        //gambar particle
+        window.display();       //tampilin frame ke layar
     }
 
     return 0;

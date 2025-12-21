@@ -1,63 +1,61 @@
 #include "ParticleSystem.hpp"
-#include <cstdlib>
 #include <cmath>
 
+static float dist(const sf::Vector2f& a, const sf::Vector2f& b) {
+    return std::hypot(a.x - b.x, a.y - b.y);
+}
+
+void ParticleSystem::addParticle(AtomType type, sf::Vector2f pos) {
+    particles.emplace_back(type, pos);      //mbuat particle langsung di vector
+}
 
 void ParticleSystem::update(float dt) {
-    // Update posisi semua partikel normal
-    for (auto& p : particles) {
-        if (!p.linked) {
-            p.pos += p.vel * dt;
+    for (auto& p : particles)
+        p.update(dt);
 
-            // Bounce sederhana
-            if (p.pos.x < p.radius || p.pos.x > 800 - p.radius)
-                p.vel.x *= -1;
-            if (p.pos.y < p.radius || p.pos.y > 600 - p.radius)
-                p.vel.y *= -1;
-        }
-    }
+    if (mode == CollisionMode::BruteForce)
+        bruteForceCollision();
+    else
+        quadtreeCollision();
+}
 
-    // Cek H + H + O untuk membentuk H2O
+void ParticleSystem::bruteForceCollision() {
     for (size_t i = 0; i < particles.size(); i++) {
-        Particle& p1 = particles[i];
-        if (p1.linked || p1.type != AtomType::Hydrogen) continue;
+        for (size_t j = i + 1; j < particles.size(); j++) {
+            Particle& a = particles[i];
+            Particle& b = particles[j];
 
-        for (size_t j = i+1; j < particles.size(); j++) {
-            Particle& p2 = particles[j];
-            if (p2.linked || p2.type != AtomType::Hydrogen) continue;
+            float d = dist(a.pos, b.pos);
+            float minDist = a.radius + b.radius;
 
-            for (size_t k = 0; k < particles.size(); k++) {
-                Particle& p3 = particles[k];
-                if (p3.linked || p3.type != AtomType::Oxygen) continue;
-
-                // Hitung jarak H-H-O
-                float d1 = std::hypot(p1.pos.x - p3.pos.x, p1.pos.y - p3.pos.y);
-                float d2 = std::hypot(p2.pos.x - p3.pos.x, p2.pos.y - p3.pos.y);
-
-                if (d1 < 30 && d2 < 30) { // threshold jarak molekul
-                    // Tandai sudah linked
-                    p1.linked = p2.linked = p3.linked = true;
-
-                    // Simpan partner agar bisa bergerak bareng
-                    p1.partners = {&p2, &p3};
-                    p2.partners = {&p1, &p3};
-                    p3.partners = {&p1, &p2};
-
-                    // Set velocity sama supaya bergerak bersama
-                    sf::Vector2f avgVel = (p1.vel + p2.vel + p3.vel) / 3.0f;
-                    p1.vel = p2.vel = p3.vel = avgVel;
-
-                    goto nextMolecule; // sudah menemukan 1 molekul, lanjut cek yang lain
-                }
+            if (d < minDist && d > 0) {
+                std::swap(a.vel, b.vel);
             }
         }
-    nextMolecule:;
     }
+}
 
-    // Update posisi partikel yang linked (bergerak bersama molekul)
+void ParticleSystem::quadtreeCollision() {
+    Quadtree qt({0,0,800,600}, 4);
+
+    for (auto& p : particles)
+        qt.insert(&p);      //masukin semua particle
+
     for (auto& p : particles) {
-        if (p.linked) {
-            p.pos += p.vel * dt; // bergerak bareng velocity rata-rata
+        sf::FloatRect range(
+            p.pos.x - 30, p.pos.y - 30, 60, 60
+        );
+
+        std::vector<Particle*> found;
+        qt.query(range, found);
+
+        for (auto* other : found) {
+            if (&p == other) continue;
+
+            float d = dist(p.pos, other->pos);
+            if (d < p.radius + other->radius && d > 0) {
+                std::swap(p.vel, other->vel);
+            }
         }
     }
 }
@@ -67,6 +65,6 @@ void ParticleSystem::draw(sf::RenderWindow& window) {
         p.draw(window);
 }
 
-void ParticleSystem::addParticle(AtomType type, sf::Vector2f pos) {
-    particles.push_back(Particle(type, pos));
+void ParticleSystem::setCollisionMode(CollisionMode m) {
+    mode = m;
 }

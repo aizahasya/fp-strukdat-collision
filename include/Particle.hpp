@@ -1,28 +1,26 @@
-#pragma once
-#include <SFML/Graphics.hpp>
+#pragma once        // buat ngehindari multiple definition penyebab error
+#include <SFML/Graphics.hpp>        //buat komponen2 grafis nya kayak vector posisi dan kecepatanwarna partikel dll
+#include <vector>       //library STL
 
-enum class AtomType {
+enum class AtomType {       //definisi jenis partikel nya apa aja pakai enum class biar lebih aman ga gampang ke campur
     Hydrogen,
     Helium,
     Oxygen,
-    Carbon,    
-    Nitrogen,  
-    Ferrum,  
+    Carbon,
+    Nitrogen,
+    Ferrum
 };
 
-class Particle {
+class Particle {        //definisi class particle
 public:
-    sf::Vector2f pos;
-    sf::Vector2f vel;
-    float radius;
-    sf::Color color;
     AtomType type;
+    sf::Vector2f pos;       //buat posisi particle koordinat xy tipe float gerakan halebih halus
+    sf::Vector2f vel;       //ini buat kecepatan nya
+    float radius;       //radius particle
+    sf::Color color;
 
-    bool linked = false;
-    std::vector<Particle*> partners;
+    Particle(AtomType t, sf::Vector2f startPos);        //construktor nya t itu jenis atom nya dan posisi awal starpos
 
-    Particle(AtomType t, sf::Vector2f startPos);
-
-    void update(float dt);
-    void draw(sf::RenderWindow& window);
+    void update(float dt);      //update logika particle tipa frame
+    void draw(sf::RenderWindow& window);        //menggambar particle ke window
 };
